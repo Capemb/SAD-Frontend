@@ -183,7 +183,7 @@ const selectModule = async (m) => {
 
 const loadCriteriaForModule = async (moduleId) => {
   try {
-    const token = localStorage.getItem("auth_token")
+    const token = localStorage.getItem("auth_token_rh")
     const response = await fetch(
       `http://localhost:8000/api/criterios/listar-criterio/${moduleId}`,
       {
@@ -231,7 +231,7 @@ const saveCriterion = async () => {
   if (!selectedModule.value) return alert("Selecione primeiro um módulo.")
 
   criterionLoading.value = true
-  const token = localStorage.getItem("auth_token")
+  const token = localStorage.getItem("auth_token_rh")
 
   try {
     let response
@@ -289,7 +289,7 @@ const removeCriterion = async (c) => {
   if (!confirm(`Remover critério "${c.nome}"?`)) return
 
   try {
-    const token = localStorage.getItem("auth_token")
+    const token = localStorage.getItem("auth_token_rh")
     const response = await fetch(
       `http://localhost:8000/api/criterios/eliminar-criterio/${c.id}`,
       {
@@ -315,7 +315,7 @@ const removeCriterion = async (c) => {
 onMounted(async () => {
   modulesLoading.value = true
   try {
-    const token = localStorage.getItem("auth_token")
+    const token = localStorage.getItem("auth_token_rh")
     const response = await fetch(
       "http://localhost:8000/api/modulos-avaliacao/listar-modulo",
       {

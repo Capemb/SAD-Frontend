@@ -1,35 +1,70 @@
+// src/http/api.js
 import axios from 'axios'
 
-const api = axios.create({
-  baseURL: 'http://localhost:8000/api/', // ✨ Corrigido
-  withCredentials: true,
+// ==========================
+// 🔹 CONFIGURAÇÕES GERAIS
+// ==========================
+const BASE_URL = 'http://localhost:8000/api'
+
+// ==========================
+// 🔹 API DO RH
+// ==========================
+export const apiRh = axios.create({
+  baseURL: 'http://localhost:8000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 })
 
-export function setAuthToken(token) {
+
+// Interceptor: adiciona token do RH automaticamente
+apiRh.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token_rh')
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-  } else {
-    delete api.defaults.headers.common['Authorization']
+    config.headers.Authorization = `Bearer ${token}`
   }
+  return config
+})
+
+// ==========================
+// 🔹 API DOS GESTORES E COLABORADORES
+// ==========================
+export const apiUsuario = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Interceptor: adiciona token do usuário (gestor/colaborador)
+apiUsuario.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token_usuario')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// ==========================
+// 🔹 FUNÇÕES AUXILIARES
+// ==========================
+
+// ----- RH -----
+export async function loginRh(credentials) {
+  return apiRh.post('/auth/login', credentials)
 }
 
-
-export async function csrfCookie() {
-  //sem o sanctum, apenas com apitoken
-
+export async function logoutRh() {
+  return apiRh.post('/auth/logout')
 }
 
-export async function login(credentials) {
-  return api.post('/login', credentials) // ou o caminho que definiste
+// ----- Gestores / Colaboradores -----
+export async function loginUsuario(credentials) {
+  return apiUsuario.post('/usuarios/login-colaborador', credentials)
 }
 
-export async function logout() {
-  return api.post('/logout')
+export async function logoutUsuario() {
+  return apiUsuario.post('/usuarios/logout')
 }
 
-export async function fetchUser() {
-  return axios.get('http://localhost:8000/api/user', { withCredentials: true })
-}
-
-
-export default api
+export default { apiRh, apiUsuario, loginRh, loginUsuario, logoutRh, logoutUsuario }

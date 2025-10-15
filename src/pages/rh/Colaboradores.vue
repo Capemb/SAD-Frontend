@@ -129,7 +129,7 @@ const userForm = reactive({
 
 /* ===== API Helpers ===== */
 const API_URL = "http://localhost:8000/api/usuarios"
-const token = localStorage.getItem("auth_token")
+const token = localStorage.getItem("auth_token_rh")
 
 const fetchUsuarios = async () => {
   loading.value = true

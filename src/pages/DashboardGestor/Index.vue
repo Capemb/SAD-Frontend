@@ -22,21 +22,22 @@ import { ref, onMounted } from 'vue'
 import GestorSidebar from '@/components/gestor/GestorSidebar.vue'
 import GestorTopbar from '@/components/gestor/GestorTopbar.vue'
 import GestorCard from '@/components/gestor/GestorCard.vue'
-
+import { useRouter } from 'vue-router'
 
 const collapsed = ref(false)
 const user = ref(null)
+const router = useRouter()
 
 onMounted(() => {
   const storedUser = localStorage.getItem('user')
   if (storedUser) {
     user.value = JSON.parse(storedUser)
   } else {
-    console.warn("Usuário não encontrado no localStorage. Redirecionando para login...")
-    window.location.href = '/login'
+    console.warn("Usuário não encontrado, permanecendo na página.")
   }
 })
 </script>
+
 
 
 <style scoped>

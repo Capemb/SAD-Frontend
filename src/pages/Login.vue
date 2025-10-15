@@ -24,10 +24,9 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref } from 'vue'
-import api from '../http/api'
+import { apiUsuario } from '@/http/api'
 import { useRouter } from 'vue-router'
 
 const email = ref('')
@@ -41,20 +40,22 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    const { data } = await api.post('/usuarios/login-colaborador', {
+    const { data } = await apiUsuario.post('/usuarios/login-colaborador', {
       email: email.value,
       password: password.value
     })
 
-    // guardar token
-    localStorage.setItem('auth_token', data.access_token)
-    localStorage.setItem('user_role', data.user.role)
+    // ✅ Guarda token e dados do usuário corretamente
+    localStorage.setItem('auth_token_usuario', data.token)
+    localStorage.setItem('user', JSON.stringify(data.user))
 
-    // redirecionar conforme role
+    // ✅ Redireciona conforme o role
     if (data.user.role === 'gestor') {
       router.push('/dashboard-gestor')
-    } else {
+    } else if (data.user.role === 'colaborador') {
       router.push('/dashboard-colaborador')
+    } else {
+      router.push('/login') // fallback
     }
   } catch (err) {
     error.value = err.response?.data?.message || 'Falha ao entrar, tente novamente.'
@@ -63,6 +64,7 @@ const handleLogin = async () => {
   }
 }
 </script>
+
 
 <style scoped>
 /* estilos do login que já tinhas */

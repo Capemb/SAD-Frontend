@@ -15,6 +15,10 @@ import Perfis from './pages/rh/Perfis.vue'
 import Relatorios from './pages/rh/Relatorios.vue'
 import DashboardColaborador from '@/pages/DashboardColaborador/Index.vue'
 import DashboardGestor from '@/pages/DashboardGestor/Index.vue'
+import Equipa from '@/pages/DashboardGestor/Equipa.vue'
+import Avaliacao from '@/pages/DashboardGestor/Avaliacao.vue'
+import Relatorio from '@/pages/DashboardGestor/Relatorios.vue'
+import Perfil from '@/pages/DashboardGestor/Perfil.vue'
 
 
 
@@ -40,7 +44,16 @@ const routes = [
      path: '/dashboard-gestor',
     name: 'dashboard-gestor',
     component: DashboardGestor,
-    meta: { requiresAuth: true, role: 'gestor' }
+    meta: { requiresAuth: true, role: 'gestor' },
+    children:[
+
+      { path: '', name: 'gestor-home', component: Avaliacao },
+      { path: 'equipa', name: 'gestor-equipa', component: Equipa },
+      { path: 'avaliacoes', name: 'gestor-avaliacoes', component: Avaliacao },
+      { path: 'relatorios', name: 'gestor-relatorios', component: Relatorio },
+      { path: 'perfil', name: 'gestor-perfil', component: Perfil },
+      
+    ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/login' },
 
@@ -84,9 +97,17 @@ const router = createRouter({
   routes,
 })
 
-// ✨ Guardião de Navegação (Navigation Guard)
 
 
+// ✅ Proteção de rota
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('auth_token_usuario')
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+  } else {
+    next()
+  }
+})
 
 
 

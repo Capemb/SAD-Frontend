@@ -34,7 +34,8 @@
 
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '@/http/api';
+import { apiRh } from '@/http/api'
+
 
 const router = useRouter();
 
@@ -43,25 +44,33 @@ const password = ref('');
 const errorMessage = ref('');
 const loading = ref(false) 
 
-const handleLogin = async()=>{
-    errorMessage.value = ''
-    loading.value = true
-    try{
-        const {data} = await api.post('auth/login', {
-            email: email.value,
-            password: password.value
-        })
 
-        localStorage.setItem('auth_token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        router.push('/rh/dashboard')
-    } catch(error){
-        errorMessage.value = 'Erro ao fazer login. Verifique suas credenciais.'
-        console.error('Login error:', error)
-    } finally{
-        loading.value = false
-    }
+const handleLogin = async () => {
+  errorMessage.value = ''
+  loading.value = true
+
+  try {
+    const { data } = await apiRh.post('/auth/login', {
+      email: email.value,
+      password: password.value
+    })
+
+    localStorage.setItem('auth_token_rh', data.token)
+    localStorage.setItem('rh_user', JSON.stringify(data.user))
+
+    // 🚨 Remove qualquer token do usuário comum (gestor/colaborador)
+    localStorage.removeItem('auth_token_usuario')
+    localStorage.removeItem('user')
+
+    router.push('/rh/dashboard')
+  } catch (error) {
+    errorMessage.value = 'Erro ao fazer login. Verifique suas credenciais.'
+    console.error('Login error:', error)
+  } finally {
+    loading.value = false
+  }
 }
+
 </script>
 
 

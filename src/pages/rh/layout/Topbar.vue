@@ -39,7 +39,7 @@
 
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '@/http/api' // ajusta o caminho conforme necessário
+import { apiRh } from '@/http/api'// ajusta o caminho conforme necessário
 
 
 // import api from '@/http/api' // descomenta e usa quando ligares ao backend
@@ -122,7 +122,7 @@ const handleLogout = async () => {
   const token = localStorage.getItem('auth_token') // pega antes de apagar
 
   try {
-    await api.post('auth/logout', {}, {
+    await apiRh.post('auth/logout', {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
   } catch (error) {
@@ -159,7 +159,7 @@ const saveModule = async () => {
   moduleLoading.value = true
    try{
 
-     const token = localStorage.getItem('auth_token') // se usas token separado pra RH
+     const token = localStorage.getItem('auth_token_rh') // se usas token separado pra RH
      const response = await fetch('http://localhost:8000/api/modulos-avaliacao/criar-modulo', {
        method: 'POST',
        headers: {
@@ -202,8 +202,8 @@ const downloadReport = (r) => alert(`Download: ${r.title}`)
 /* fake load to simulate API */
 onMounted(async () => {
  try {
-    const token = localStorage.getItem('auth_token') // se usas token separado pra RH
-    const { data } = await api.get('auth/user', {
+    const token = localStorage.getItem('auth_token_rh') // se usas token separado pra RH
+    const { data } = await apiRh.get('auth/user', {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -220,7 +220,7 @@ onMounted(async () => {
 onMounted(async () => {
   modulesLoading.value = true
   try {
-    const token = localStorage.getItem('auth_token') // o mesmo token que usas para criar
+    const token = localStorage.getItem('auth_token_rh') // o mesmo token que usas para criar
     const response = await fetch('http://localhost:8000/api/modulos-avaliacao/listar-modulo', {
       headers: {
           credentials: 'include',

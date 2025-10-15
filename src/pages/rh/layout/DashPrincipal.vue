@@ -139,10 +139,9 @@
 
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '@/http/api' // ajusta o caminho conforme necessário
+import { apiRh } from '@/http/api' // ajusta o caminho conforme necessário
 
 
-// import api from '@/http/api' // descomenta e usa quando ligares ao backend
 
 const router = useRouter()
 const isCollapsed = ref(false)
@@ -219,17 +218,17 @@ const openChangeProfileModal = () => {
 }
 const handleLogout = async()=>{
   // limpar tokens e redirecionar
-  localStorage.removeItem('auth_token')
+  localStorage.removeItem('auth_token_rh')
   localStorage.removeItem('perfilAtivo')
 
   try{
     await api.post('auth/logout', {}, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token_rh')}` }
     })
   } catch (error) {
     console.error('Erro ao fazer logout no servidor.', error)
   } finally {
-    localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_token_rh')
     localStorage.removeItem('perfilAtivo')
     setAuthToken(null)
   }
@@ -261,7 +260,7 @@ const saveModule = async () => {
   moduleLoading.value = true
    try{
 
-     const token = localStorage.getItem('auth_token') // se usas token separado pra RH
+     const token = localStorage.getItem('auth_token_rh') // se usas token separado pra RH
      const response = await fetch('http://localhost:8000/api/modulos-avaliacao/criar-modulo', {
        method: 'POST',
        headers: {
@@ -308,7 +307,7 @@ const downloadReport = (r) => alert(`Download: ${r.title}`)
 onMounted(async () => {
   modulesLoading.value = true
   try {
-    const token = localStorage.getItem('auth_token') // o mesmo token que usas para criar
+    const token = localStorage.getItem('auth_token_rh') // o mesmo token que usas para criar
     const response = await fetch('http://localhost:8000/api/modulos-avaliacao/listar-modulo', {
       headers: {
           credentials: 'include',

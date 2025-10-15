@@ -161,7 +161,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 
-const token = localStorage.getItem("auth_token")
+const token = localStorage.getItem("auth_token_rh")
 const API_CICLOS = "http://localhost:8000/api/ciclos"
 const API_AVALIACOES = "http://localhost:8000/api/avaliacoes"
 const API_USUARIOS = "http://localhost:8000/api/usuarios/listar-usuarios"
@@ -244,6 +244,7 @@ const criarAvaliacao = async () => {
         avaliador_id: f.avaliador_id,
         avaliado_id: f.avaliado_id,
         modulo_id: f.modulo_id,
+        data_avaliacao: new Date().toISOString().split('T')[0],
         criterios: [],
       }),
     })

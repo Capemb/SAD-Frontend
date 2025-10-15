@@ -174,7 +174,7 @@ const permissoesSelecionadas = ref([])
 const roleSelecionado = ref(null)
 const usuarioSelecionado = ref(null)
 
-const token = localStorage.getItem("auth_token")
+const token = localStorage.getItem("auth_token_rh")
 const API = "http://localhost:8000/api"
 
 /* -------------------------

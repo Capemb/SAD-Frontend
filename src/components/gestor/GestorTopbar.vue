@@ -1,38 +1,58 @@
 <template>
   <header class="topbar">
-    <button class="toggle-btn" @click="$emit('toggle')">
+    <button class="toggle-btn" @click="$emit('toggleSidebar')">
       <i class="fas fa-bars"></i>
     </button>
+
     <div class="topbar-right">
       <i class="fas fa-bell"></i>
-      <div class="user-menu">
-        <i class="fas fa-user-circle"></i>
-        <span>{{ user?.nome || 'Gestor' }}</span>
-      </div>
-      <i class="fas fa-sign-out-alt" @click="logout"></i>
+      <i class="fas fa-user"></i>
+      <button
+        class="logout-btn"
+        @click="handleLogout"
+        :disabled="isLoggingOut"
+      >
+        <i class="fas fa-sign-out-alt"></i>
+        <span v-if="!isLoggingOut">Sair</span>
+        <span v-else>Sair...</span>
+      </button>
     </div>
   </header>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
-const user = JSON.parse(localStorage.getItem('user') || '{}')
+import { useRouter } from "vue-router";
+import { ref } from "vue";
 
-const logout = async () => {
+const router = useRouter();
+const isLoggingOut = ref(false);
+
+const handleLogout = async () => {
+  isLoggingOut.value = true;
+
   try {
-    const token = localStorage.getItem('auth_token')
-    await fetch('http://localhost:8000/api/usuarios/logout', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  } catch (e) {
-    console.error('Erro ao fazer logout:', e)
+    const token = localStorage.getItem("auth_token_usuario");
+
+    if (token) {
+      await fetch("http://localhost:8000/api/usuarios/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {}); // Ignora caso não exista o endpoint
+    }
+  } catch (error) {
+    console.error("Erro ao sair:", error);
   } finally {
-    localStorage.clear()
-    router.push('/login')
+    // Limpar apenas o contexto do usuário (gestor/colaborador)
+    localStorage.removeItem("auth_token_usuario");
+    localStorage.removeItem("user");
+    localStorage.removeItem("user_role");
+
+    isLoggingOut.value = false;
+
+    // Redireciona para login dos usuários
+    router.push({ name: "login" });
   }
-}
+};
 </script>
 
 <style scoped>
@@ -72,5 +92,23 @@ const logout = async () => {
 }
 .topbar-right i:hover {
   color: #007bff;
+}
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s;
+}
+.logout-btn:hover {
+  color: #e74c3c;
+  transform: scale(1.05);
+}
+.logout-btn:disabled {
+  color: gray;
+  cursor: not-allowed;
 }
 </style>
