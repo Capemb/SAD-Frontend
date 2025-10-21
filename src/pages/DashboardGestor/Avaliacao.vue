@@ -1,13 +1,13 @@
 <template>
-  <div class="page avaliacoes">
+  <div class="page avaliacao-page">
     <h2><i class="fas fa-tasks"></i> Minhas Avaliações</h2>
-    <p>Veja as avaliações dos seus colaboradores e atribua notas aos critérios.</p>
+    <p class="subtitle">Veja e gerencie as avaliações associadas a você.</p>
 
     <table class="styled-table">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Colaborador</th>
+          <th>ID</th>
+          <th>Avaliado</th>
           <th>Módulo</th>
           <th>Ciclo</th>
           <th>Status</th>
@@ -22,7 +22,7 @@
           <td>{{ a.ciclo?.nome || '—' }}</td>
           <td><span class="status" :class="a.status">{{ a.status }}</span></td>
           <td>
-            <button class="btn small" @click="avaliar(a)">
+            <button class="btn-action" @click="avaliar(a)">
               <i class="fas fa-pen"></i> Avaliar
             </button>
           </td>
@@ -34,66 +34,59 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '@/http/api'
+import { apiUsuario } from '@/http/api'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const avaliacoes = ref([])
 
-const carregarAvaliacoes = async () => {
-  const token = localStorage.getItem('auth_token_usuario')
-  const { data } = await api.get('/avaliacoes/listar', {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  avaliacoes.value = data.avaliacoes || []
-}
+onMounted(async () => {
+  try {
+    const { data } = await apiUsuario.get('/usuarios/listar-avaliacoes-gestor')
+    console.log('Avaliações carregadas:', data)
+    avaliacoes.value = data.avaliacoes || []
+  } catch (error) {
+    console.error('Erro ao carregar avaliações:', error)
+  }
+})
 
 const avaliar = (avaliacao) => {
-  alert(`Abrindo avaliação #${avaliacao.id} de ${avaliacao.avaliado?.nome}`)
+  router.push(`/dashboard-gestor/avaliacoes/${avaliacao.id}`)
 }
 
-onMounted(carregarAvaliacoes)
 </script>
 
 <style scoped>
-.page {
-  padding: 2rem;
-}
+.page { padding: 2rem; animation: fadeIn 0.5s ease; }
+.subtitle { color: #555; margin-bottom: 1.5rem; }
 .styled-table {
   width: 100%;
-  background: white;
   border-collapse: collapse;
-  border-radius: 8px;
+  background: white;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
-th, td {
-  padding: 12px;
+.styled-table th, .styled-table td {
+  padding: 1rem;
   text-align: left;
-}
-th {
-  background: #f3f4f6;
-  color: #374151;
-}
-tr:hover {
-  background: #f9fafb;
+  border-bottom: 1px solid #eee;
 }
 .status {
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 12px;
   text-transform: capitalize;
+  font-weight: 600;
 }
-.status.em_progresso {
-  background: #dbeafe;
-  color: #1e3a8a;
-}
-.btn.small {
-  background: #2563eb;
-  color: white;
+.status.em_progresso { color: #007bff; }
+.status.pendente { color: #e67e22; }
+.btn-action {
   border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
+  background: #007bff;
+  color: white;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
   cursor: pointer;
+  transition: 0.3s;
 }
-.btn.small:hover {
-  background: #1d4ed8;
-}
+.btn-action:hover { background: #0056b3; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

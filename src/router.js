@@ -19,6 +19,7 @@ import Equipa from '@/pages/DashboardGestor/Equipa.vue'
 import Avaliacao from '@/pages/DashboardGestor/Avaliacao.vue'
 import Relatorio from '@/pages/DashboardGestor/Relatorios.vue'
 import Perfil from '@/pages/DashboardGestor/Perfil.vue'
+import AvaliacaoDetalhe from '@/pages/DashboardGestor/AvaliacaoDetalhe.vue'
 
 
 
@@ -41,20 +42,25 @@ const routes = [
   },
 
   {
-     path: '/dashboard-gestor',
-    name: 'dashboard-gestor',
-    component: DashboardGestor,
-    meta: { requiresAuth: true, role: 'gestor' },
-    children:[
+  path: '/dashboard-gestor',
+  name: 'dashboard-gestor',
+  component: DashboardGestor,
+  meta: { requiresAuth: true, role: 'gestor' },
+  children: [
+    { path: '', name: 'gestor-home', component: Avaliacao },
+    { path: 'equipa', name: 'gestor-equipa', component: Equipa },
+    { path: 'avaliacoes', name: 'gestor-avaliacoes', component: Avaliacao },
+    { path: 'relatorios', name: 'gestor-relatorios', component: Relatorio },
+    { path: 'perfil', name: 'gestor-perfil', component: Perfil },
+    {
+      path: 'avaliacoes/:id',
+      name: 'gestor-avaliacao-detalhe',
+      component: AvaliacaoDetalhe,
+      meta: { requiresAuth: true, role: 'gestor' }
+    }
 
-      { path: '', name: 'gestor-home', component: Avaliacao },
-      { path: 'equipa', name: 'gestor-equipa', component: Equipa },
-      { path: 'avaliacoes', name: 'gestor-avaliacoes', component: Avaliacao },
-      { path: 'relatorios', name: 'gestor-relatorios', component: Relatorio },
-      { path: 'perfil', name: 'gestor-perfil', component: Perfil },
-      
-    ]
-  },
+  ]
+},
   { path: '/:pathMatch(.*)*', redirect: '/login' },
 
 

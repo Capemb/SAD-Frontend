@@ -65,7 +65,7 @@
                   <li v-for="c in criteria" :key="c.id" class="criterion-item">
                     <div>
                       <strong>{{ c.nome }}</strong>
-                      <div class="muted small">Peso: {{ c.peso }}</div>
+                    
                     </div>
                     <div class="module-actions">
                       <button class="icon" title="Editar" @click="editCriterion(c)">
@@ -105,15 +105,7 @@
             <label>Nome</label>
             <input v-model="criterionForm.nome" required maxlength="150" />
 
-            <label>Peso (ex: 1.00)</label>
-            <input
-              v-model.number="criterionForm.peso"
-              type="number"
-              step="0.01"
-              min="0"
-              required
-            />
-
+           
             <div class="modal-actions">
               <button type="button" class="btn ghost" @click="closeCriterionModal">
                 Cancelar
@@ -164,7 +156,7 @@ const selectedModule = ref(null)
 const criteria = ref([])
 const showCriterionModal = ref(false)
 const editingCriterion = ref(null)
-const criterionForm = reactive({ id: null, nome: "", peso: 1.0 })
+const criterionForm = reactive({ id: null, nome: "" })
 const criterionLoading = ref(false)
 
 // Module modal (para criar módulos)
@@ -212,7 +204,7 @@ const openCreateCriterion = () => {
   editingCriterion.value = null
   criterionForm.id = null
   criterionForm.nome = ""
-  criterionForm.peso = 1.0
+
   showCriterionModal.value = true
 }
 
@@ -220,7 +212,7 @@ const editCriterion = (c) => {
   editingCriterion.value = c.id
   criterionForm.id = c.id
   criterionForm.nome = c.nome
-  criterionForm.peso = c.peso
+
   showCriterionModal.value = true
 }
 
@@ -249,7 +241,7 @@ const saveCriterion = async () => {
           },
           body: JSON.stringify({
             nome: criterionForm.nome,
-            peso: criterionForm.peso,
+           
           }),
         }
       )
@@ -267,7 +259,7 @@ const saveCriterion = async () => {
           body: JSON.stringify({
             modulo_id: selectedModule.value.id,
             nome: criterionForm.nome,
-            peso: criterionForm.peso,
+     
           }),
         }
       )

@@ -123,6 +123,18 @@
 
             <label>Descrição</label>
             <textarea v-model="moduleForm.descricao" rows="3"></textarea>
+           <label for="peso">Peso (%)</label>
+<input
+  id="peso"
+  type="number"
+  v-model.number="moduleForm.peso"
+  min="0.1"
+  max="100"
+  step="0.01"
+  placeholder="Ex: 12.5"
+/>
+
+            
 
             <div class="modal-actions">
               <button type="button" class="btn ghost" @click="closeModuleModal">Cancelar</button>
@@ -194,7 +206,7 @@ const chartData = ref([40, 70, 60, 85, 45]) // simples placeholder
 /* Module modal */
 const showModuleModal = ref(false)
 const editingModule = ref(null)
-const moduleForm = reactive({ id: null, nome: '', descricao: '' })
+const moduleForm = reactive({ id: null, nome: '', descricao: '', peso: 0.0 })
 const moduleLoading = ref(false)
 
 /* Actions */
@@ -250,6 +262,7 @@ const editModule = (m) => {
   moduleForm.id = m.id
   moduleForm.nome = m.nome
   moduleForm.descricao = m.descricao
+  moduleForm.peso = m.peso
   showModuleModal.value = true
 }
 
@@ -268,7 +281,8 @@ const saveModule = async () => {
          'Authorization': `Bearer ${token}`},
         body: JSON.stringify({
          nome: moduleForm.nome,
-         descricao: moduleForm.descricao}
+         descricao: moduleForm.descricao,
+         peso: moduleForm.peso}
         ),
       })
       if(!response.ok) {
@@ -290,10 +304,33 @@ const saveModule = async () => {
 }
 
 const removeModule = async (m) => {
-  if (!confirm(`Remover módulo "${m.nome}"?`)) return
-  // se tiver backend: await api.delete(`/modulos-avaliacao/${m.id}`)
-  modules.value = modules.value.filter((x) => x.id !== m.id)
+  if (!confirm(`Remover módulo "${m.nome}"?`)) return;
+
+  try {
+    const response = await fetch(`http://localhost:8000/api/modulos-avaliacao/eliminar-modulo/${m.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token_rh')}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Erro backend:', errorData)
+      alert(errorData.message || 'Erro ao remover módulo.')
+      return
+    }
+
+    alert('Módulo removido com sucesso ✅')
+    // Atualiza a lista de módulos
+    await carregarModulos()
+  } catch (err) {
+    console.error('Erro de rede:', err)
+    alert('Falha na comunicação com o servidor.')
+  }
 }
+
 
 const openCreateCycle = () => alert('Abrir modal de criação de ciclo (implementar)')
 const openReports = () => alert('Abrir painel de relatórios')
@@ -534,11 +571,6 @@ onMounted(async () => {
   background: #e5e7eb;
   transform: scale(1.02);
 }
-
-
-
-
-
 
 .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
 .btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; background:#eef6ff; color:var(--blue-600); font-weight:600; }
