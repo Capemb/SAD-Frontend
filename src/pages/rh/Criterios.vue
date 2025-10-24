@@ -259,7 +259,6 @@ const saveCriterion = async () => {
           body: JSON.stringify({
             modulo_id: selectedModule.value.id,
             nome: criterionForm.nome,
-     
           }),
         }
       )

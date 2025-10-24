@@ -20,10 +20,31 @@
           <td>{{ a.avaliado?.nome }}</td>
           <td>{{ a.modulo?.nome }}</td>
           <td>{{ a.ciclo?.nome || '—' }}</td>
-          <td><span class="status" :class="a.status">{{ a.status }}</span></td>
+
           <td>
-            <button class="btn-action" @click="avaliar(a)">
-              <i class="fas fa-pen"></i> Avaliar
+            <span class="status" :class="a.status">
+              {{ a.status.replace('_', ' ') }}
+            </span>
+          </td>
+
+          <td class="actions">
+            <!-- Avaliar -->
+            <button
+              class="btn-action"
+              :class="{ concluida: a.status === 'concluida' }"
+              :disabled="a.status === 'concluida'"
+              @click="avaliar(a)"
+            >
+              <i :class="a.status === 'concluida' ? 'fas fa-check-circle' : 'fas fa-pen'"></i>
+              {{ a.status === 'concluida' ? 'Concluída' : 'Avaliar' }}
+            </button>
+
+            <!-- Ver Notas -->
+            <button
+              class="btn-secondary"
+              @click="verNotas(a.id)"
+            >
+              <i class="fas fa-eye"></i> Ver Notas
             </button>
           </td>
         </tr>
@@ -43,7 +64,6 @@ const avaliacoes = ref([])
 onMounted(async () => {
   try {
     const { data } = await apiUsuario.get('/usuarios/listar-avaliacoes-gestor')
-    console.log('Avaliações carregadas:', data)
     avaliacoes.value = data.avaliacoes || []
   } catch (error) {
     console.error('Erro ao carregar avaliações:', error)
@@ -51,14 +71,24 @@ onMounted(async () => {
 })
 
 const avaliar = (avaliacao) => {
+  if (avaliacao.status === 'concluida') return
   router.push(`/dashboard-gestor/avaliacoes/${avaliacao.id}`)
 }
 
+const verNotas = (id) => {
+  router.push(`/dashboard-gestor/avaliacoes/${id}?visualizar=true`)
+}
 </script>
 
 <style scoped>
-.page { padding: 2rem; animation: fadeIn 0.5s ease; }
-.subtitle { color: #555; margin-bottom: 1.5rem; }
+.page {
+  padding: 2rem;
+  animation: fadeIn 0.5s ease;
+}
+.subtitle {
+  color: #555;
+  margin-bottom: 1.5rem;
+}
 .styled-table {
   width: 100%;
   border-collapse: collapse;
@@ -78,15 +108,42 @@ const avaliar = (avaliacao) => {
 }
 .status.em_progresso { color: #007bff; }
 .status.pendente { color: #e67e22; }
-.btn-action {
+.status.concluida { color: #28a745; }
+
+.btn-action,
+.btn-secondary {
   border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  margin-right: 6px;
+}
+
+.btn-action {
   background: #007bff;
   color: white;
-  padding: 0.5rem 0.9rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
 }
-.btn-action:hover { background: #0056b3; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.btn-action.concluida {
+  background: #ccc;
+  color: #555;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: #f3f4f6;
+  color: #333;
+}
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>

@@ -85,6 +85,14 @@
       </div>
       <div class="avaliacoes-list" v-if="avaliacoes.length > 0">
         <h3><i class="fa-solid fa-list"></i> Avaliações Criadas</h3>
+        <div class="search-bar">
+  <input
+    type="text"
+    v-model="search"
+    placeholder="🔍 Pesquisar por nome do avaliado ou módulo..."
+  />
+</div>
+
         <table class="styled-table">
           <thead>
         
@@ -99,23 +107,36 @@
               <th>Ações</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="a in avaliacoes" :key="a.id">
-              <td>{{ a.id }}</td>
-              <td>{{ a.avaliador?.nome }}</td>
-              <td>{{ a.avaliado?.nome }}</td>
-              <td>{{ a.modulo?.nome }}</td>
-              <td>{{ a.ciclo?.nome }}</td>
-              <td><span class="status" :class="a.status">{{ a.status }}</span></td>
-              <td>
-                <button class="btn small btn-ghost" @click="atualizarAvaliacao(a.id, a.status === 'concluida' ? 'em_progresso' : 'concluida')">
-                  <i class="fa-solid fa-rotate"></i> {{ a.status === 'concluida' ? 'Reabrir' : 'Concluir' }}
-                </button>
-                <button class="btn small danger" @click="eliminarAvaliacao(a.id)">
-                  <i class="fa-solid fa-trash"></i> Eliminar
-                </button></td>
-            </tr>
-          </tbody>
+        <tbody>
+  <tr v-for="(a, index) in filteredAvaliacoes" :key="a.id">
+    <td>{{ index + 1 }}</td> <!-- numeração simples -->
+    <td>{{ a.avaliador?.nome }}</td>
+    <td>{{ a.avaliado?.nome }}</td>
+    <td>{{ a.modulo?.nome }}</td>
+    <td>{{ a.ciclo?.nome }}</td>
+    <td><span class="status" :class="a.status">{{ a.status }}</span></td>
+    <td>
+      <button
+        class="btn small btn-ghost"
+        @click="atualizarAvaliacao(a.id, a.status === 'concluida' ? 'em_progresso' : 'concluida')"
+      >
+        <i class="fa-solid fa-rotate"></i>
+        {{ a.status === 'concluida' ? 'Reabrir' : 'Concluir' }}
+      </button>
+      <button class="btn small danger" @click="eliminarAvaliacao(a.id)">
+        <i class="fa-solid fa-trash"></i> Eliminar
+      </button>
+    </td>
+  </tr>
+
+  <!-- mensagem de sem resultados -->
+  <tr v-if="filteredAvaliacoes.length === 0">
+    <td colspan="7" style="text-align:center; color:#6b7280; padding:12px;">
+      Nenhuma avaliação encontrada.
+    </td>
+  </tr>
+</tbody>
+
         </table>
       </div>
     </section>
@@ -159,7 +180,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+
 
 const token = localStorage.getItem("auth_token_rh")
 const API_CICLOS = "http://localhost:8000/api/ciclos"
@@ -330,6 +352,20 @@ const atualizarAvaliacao = async (id, status) => {
     console.error("Erro ao atualizar avaliação:", error);
   }
 };
+
+
+const search = ref("") // termo da pesquisa
+const filteredAvaliacoes = computed(() => {
+  if (!search.value) return avaliacoes.value
+  const term = search.value.toLowerCase()
+  return avaliacoes.value.filter(a =>
+    a.avaliado?.nome?.toLowerCase().includes(term) ||
+    a.modulo?.nome?.toLowerCase().includes(term)
+  )
+})
+
+
+
 
 
 const formatarData = (data) =>
@@ -623,6 +659,28 @@ textarea {
   background: #dcfce7;
   color: #166534;
 }
+
+.search-bar {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-bar input {
+  width: 280px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.search-bar input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
 
 /* Modal (mantido igual ao original) */
 .modal-overlay {
