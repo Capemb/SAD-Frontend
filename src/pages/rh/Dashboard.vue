@@ -14,6 +14,14 @@
       <!-- CONTENT -->
      
    <main class="content">
+
+     <!-- 🔹 Boas-vindas e título -->
+        <section class="welcome-section">
+          <div class="welcome-container">
+            <h1 class="app-title">SAD — Sistema de Avaliação de Desempenho</h1>
+            <p class="app-subtitle">Bem-vindo ao painel de Recursos Humanos. Gerencie avaliações, colaboradores e relatórios de forma eficiente.</p>
+          </div>
+        </section>
         <router-view />
     </main>
     </div>
@@ -226,10 +234,29 @@ import Topbar from './layout/Topbar.vue'
   transform: scale(1.02);
 }
 
+.welcome-section{
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(17,24,39,0.03);
+  margin-bottom: 2rem;
+}
+.welcome-container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
 
-
-
-
+.app-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+.app-subtitle {
+  font-size: 1.1rem;
+  color: #4b5563;
+}
 
 .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
 .btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; background:#eef6ff; color:var(--blue-600); font-weight:600; }
@@ -256,4 +283,6 @@ import Topbar from './layout/Topbar.vue'
   .sidebar { position:fixed; z-index:80; left:0; top:0; bottom:0; transform:translateX(0); }
   .sidebar-collapsed .sidebar { transform: translateX(-100%); }
 }
+
+
 </style>

@@ -83,21 +83,16 @@
           <i class="fa-solid fa-check"></i> Criar Avaliação
         </button>
       </div>
+
       <div class="avaliacoes-list" v-if="avaliacoes.length > 0">
         <h3><i class="fa-solid fa-list"></i> Avaliações Criadas</h3>
         <div class="search-bar">
-  <input
-    type="text"
-    v-model="search"
-    placeholder="🔍 Pesquisar por nome do avaliado ou módulo..."
-  />
-</div>
+          <input type="text" v-model="search" placeholder="🔍 Pesquisar por nome do avaliado ou módulo..." />
+        </div>
 
         <table class="styled-table">
           <thead>
-        
             <tr>
-
               <th>#</th>
               <th>Gestor</th>
               <th>Avaliado</th>
@@ -107,44 +102,39 @@
               <th>Ações</th>
             </tr>
           </thead>
-        <tbody>
-  <tr v-for="(a, index) in filteredAvaliacoes" :key="a.id">
-    <td>{{ index + 1 }}</td> <!-- numeração simples -->
-    <td>{{ a.avaliador?.nome }}</td>
-    <td>{{ a.avaliado?.nome }}</td>
-    <td>{{ a.modulo?.nome }}</td>
-    <td>{{ a.ciclo?.nome }}</td>
-    <td><span class="status" :class="a.status">{{ a.status }}</span></td>
-    <td>
-      <button
-        class="btn small btn-ghost"
-        @click="atualizarAvaliacao(a.id, a.status === 'concluida' ? 'em_progresso' : 'concluida')"
-      >
-        <i class="fa-solid fa-rotate"></i>
-        {{ a.status === 'concluida' ? 'Reabrir' : 'Concluir' }}
-      </button>
-      <button class="btn small danger" @click="eliminarAvaliacao(a.id)">
-        <i class="fa-solid fa-trash"></i> Eliminar
-      </button>
-    </td>
-  </tr>
+          <tbody>
+            <tr v-for="(a, index) in filteredAvaliacoes" :key="a.id">
+              <td>{{ index + 1 }}</td>
+              <td>{{ a.avaliador?.nome }}</td>
+              <td>{{ a.avaliado?.nome }}</td>
+              <td>{{ a.modulo?.nome }}</td>
+              <td>{{ a.ciclo?.nome }}</td>
+              <td><span class="status" :class="a.status">{{ a.status }}</span></td>
+              <td>
+                <button class="btn small btn-ghost" @click="atualizarAvaliacao(a.id, a.status === 'concluida' ? 'em_progresso' : 'concluida')">
+                  <i class="fa-solid fa-rotate"></i>
+                  {{ a.status === 'concluida' ? 'Reabrir' : 'Concluir' }}
+                </button>
+                <button class="btn small danger" @click="eliminarAvaliacao(a.id)">
+                  <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+              </td>
+            </tr>
 
-  <!-- mensagem de sem resultados -->
-  <tr v-if="filteredAvaliacoes.length === 0">
-    <td colspan="7" style="text-align:center; color:#6b7280; padding:12px;">
-      Nenhuma avaliação encontrada.
-    </td>
-  </tr>
-</tbody>
-
+            <tr v-if="filteredAvaliacoes.length === 0">
+              <td colspan="7" style="text-align:center; color:#6b7280; padding:12px;">
+                Nenhuma avaliação encontrada.
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </section>
 
-    <!-- MODAL CRIAR CICLO -->
+    <!-- MODAL CRIAR CICLO (REPARADO) -->
     <transition name="fade">
-      <div v-if="showModal" class="modal-overlay" @click.self="fecharModal">
-        <div class="modal glass">
+      <div v-if="showModal" class="ciclo-modal-overlay" @click.self="fecharModal" aria-modal="true" role="dialog">
+        <div class="ciclo-modal glass" ref="modalRoot">
           <h3><i class="fa-solid fa-circle-plus"></i> Criar Novo Ciclo</h3>
 
           <div class="form-group">
@@ -169,9 +159,7 @@
 
           <div class="modal-actions">
             <button class="btn btn-ghost" @click="fecharModal">Cancelar</button>
-            <button class="btn btn-gradient" @click="salvarCiclo">
-              <i class="fa-solid fa-check"></i> Criar Ciclo
-            </button>
+            <button class="btn btn-gradient" @click="salvarCiclo"> <i class="fa-solid fa-check"></i> Criar Ciclo</button>
           </div>
         </div>
       </div>
@@ -180,8 +168,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-
+import { ref, onMounted, computed, nextTick } from 'vue'
 
 const token = localStorage.getItem("auth_token_rh")
 const API_CICLOS = "http://localhost:8000/api/ciclos"
@@ -196,54 +183,100 @@ const avaliacoes = ref([])
 
 const showModal = ref(false)
 const form = ref({ nome: "", descricao: "", inicio: "", fim: "" })
-const formAvaliacao = ref({
-  ciclo_id: "",
-  avaliador_id: "",
-  avaliado_id: "",
-  modulo_id: "",
-})
+const formAvaliacao = ref({ ciclo_id: "", avaliador_id: "", avaliado_id: "", modulo_id: "" })
 
+const search = ref("")
+
+// carregar dados
 const carregarCiclos = async () => {
-  const res = await fetch(API_CICLOS, { headers: { Authorization: `Bearer ${token}` } })
-  ciclos.value = await res.json()
+  try {
+    const res = await fetch(API_CICLOS, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+    ciclos.value = await res.json()
+  } catch (err) {
+    console.error("Erro ao carregar ciclos:", err)
+  }
 }
 
 const carregarUsuariosEModulos = async () => {
-  const [uRes, mRes] = await Promise.all([
-    fetch(API_USUARIOS, { headers: { Authorization: `Bearer ${token}` } }),
-    fetch(API_MODULOS, { headers: { Authorization: `Bearer ${token}` } }),
-  ])
-  usuarios.value = await uRes.json()
-  modulos.value = await mRes.json()
+  try {
+    const [uRes, mRes] = await Promise.all([
+      fetch(API_USUARIOS, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(API_MODULOS, { headers: { Authorization: `Bearer ${token}` } })
+    ])
+    if (!uRes.ok || !mRes.ok) throw new Error('Erro carregando usuários ou módulos')
+    usuarios.value = await uRes.json()
+    modulos.value = await mRes.json()
+  } catch (err) {
+    console.error("Erro ao carregar usuários/modulos:", err)
+  }
 }
 
-const abrirModalCriar = () => (showModal.value = true)
+const carregarAvaliacoes = async () => {
+  try {
+    const res = await fetch(`${API_AVALIACOES}/listar`, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+    const data = await res.json()
+    if (Array.isArray(data.avaliacoes)) avaliacoes.value = data.avaliacoes
+    else if (Array.isArray(data)) avaliacoes.value = data
+    else avaliacoes.value = []
+  } catch (err) {
+    console.error("Erro ao carregar avaliações:", err)
+  }
+}
+
+// modal handlers
+const abrirModalCriar = async () => {
+  form.value = { nome: "", descricao: "", inicio: "", fim: "" }
+  showModal.value = true
+  await nextTick()
+  // impedir scroll do body enquanto modal aberto
+  document.documentElement.style.overflow = 'hidden'
+  document.body.style.overflow = 'hidden'
+}
 const fecharModal = () => {
   showModal.value = false
+  document.documentElement.style.overflow = ''
+  document.body.style.overflow = ''
   form.value = { nome: "", descricao: "", inicio: "", fim: "" }
 }
 
+// operações CRUD
 const salvarCiclo = async () => {
   if (!form.value.nome || !form.value.inicio || !form.value.fim) {
     alert("Preencha todos os campos obrigatórios.")
     return
   }
-  await fetch(API_CICLOS, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(form.value),
-  })
-  fecharModal()
-  await carregarCiclos()
+  try {
+    const res = await fetch(API_CICLOS, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(form.value),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}))
+      console.error("Erro ao criar ciclo:", err)
+      alert("Erro ao criar ciclo. Ver console.")
+      return
+    }
+    await carregarCiclos()
+    fecharModal()
+  } catch (err) {
+    console.error("Erro ao salvar ciclo:", err)
+    alert("Erro inesperado. Veja o console.")
+  }
 }
 
 const excluirCiclo = async (id) => {
   if (!confirm("Deseja realmente excluir este ciclo?")) return
-  await fetch(`${API_CICLOS}/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  await carregarCiclos()
+  try {
+    const res = await fetch(`${API_CICLOS}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+    await carregarCiclos()
+  } catch (err) {
+    console.error("Erro ao excluir ciclo:", err)
+    alert("Erro ao excluir. Veja o console.")
+  }
 }
 
 const criarAvaliacao = async () => {
@@ -252,461 +285,165 @@ const criarAvaliacao = async () => {
     alert("Preencha todos os campos obrigatórios para criar uma avaliação.")
     return
   }
-
   try {
     const res = await fetch(`${API_AVALIACOES}/criar`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json", // 👈 evita redirect 302
-        Authorization: `Bearer ${token}`, // 👈 Sanctum token
-      },
+      headers: { "Content-Type": "application/json", "Accept": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         ciclo_id: f.ciclo_id,
         avaliador_id: f.avaliador_id,
         avaliado_id: f.avaliado_id,
         modulo_id: f.modulo_id,
         data_avaliacao: new Date().toISOString().split('T')[0],
-        criterios: [],
-      }),
+        criterios: []
+      })
     })
-
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}))
-      console.error("Erro ao criar avaliação:", errorData)
-      alert("Erro ao criar avaliação. Verifique o console.")
+      const err = await res.json().catch(()=>({}))
+      console.error("Erro ao criar avaliação:", err)
+      alert("Erro ao criar avaliação. Ver console.")
       return
     }
-
-    console.log("Avaliação criada com sucesso!")
     await carregarAvaliacoes()
     formAvaliacao.value = { ciclo_id: "", avaliador_id: "", avaliado_id: "", modulo_id: "" }
+    alert("Avaliação criada com sucesso")
   } catch (err) {
     console.error("Erro inesperado:", err)
+    alert("Erro inesperado. Veja o console.")
   }
 }
 
-
-
-const carregarAvaliacoes = async () => {
-  try {
-    const res = await fetch(`${API_AVALIACOES}/listar`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
-
-    const data = await res.json();
-
-    // Se a API devolve { avaliacoes: [...] }
-    if (Array.isArray(data.avaliacoes)) {
-      avaliacoes.value = data.avaliacoes;
-    } 
-    // Se devolve um array direto
-    else if (Array.isArray(data)) {
-      avaliacoes.value = data;
-    } 
-    else {
-      avaliacoes.value = [];
-    }
-
-    console.log("✅ Avaliações carregadas:", avaliacoes.value);
-  } catch (error) {
-    console.error("Erro ao carregar avaliações:", error);
-  }
-};
 const eliminarAvaliacao = async (id) => {
-  if (!confirm("Tem certeza que deseja eliminar esta avaliação?")) return;
-
+  if (!confirm("Tem certeza que deseja eliminar esta avaliação?")) return
   try {
-    const res = await fetch(`${API_AVALIACOES}/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
-
-    alert("✅ Avaliação eliminada com sucesso!");
-    await carregarAvaliacoes();
-  } catch (error) {
-    console.error("Erro ao eliminar avaliação:", error);
+    const res = await fetch(`${API_AVALIACOES}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+    await carregarAvaliacoes()
+  } catch (err) {
+    console.error("Erro ao eliminar avaliação:", err)
+    alert("Erro ao eliminar. Veja o console.")
   }
-};
+}
 
 const atualizarAvaliacao = async (id, status) => {
   try {
     const res = await fetch(`${API_AVALIACOES}/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status }),
-    });
-
-    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
-
-    alert("✅ Avaliação atualizada com sucesso!");
-    await carregarAvaliacoes();
-  } catch (error) {
-    console.error("Erro ao atualizar avaliação:", error);
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    })
+    if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+    await carregarAvaliacoes()
+  } catch (err) {
+    console.error("Erro ao atualizar avaliação:", err)
+    alert("Erro ao atualizar. Veja o console.")
   }
-};
+}
 
-
-const search = ref("") // termo da pesquisa
 const filteredAvaliacoes = computed(() => {
-  if (!search.value) return avaliacoes.value
+  if (!search.value) return avaliacoes.value || []
   const term = search.value.toLowerCase()
-  return avaliacoes.value.filter(a =>
+  return (avaliacoes.value || []).filter(a =>
     a.avaliado?.nome?.toLowerCase().includes(term) ||
     a.modulo?.nome?.toLowerCase().includes(term)
   )
 })
 
-
-
-
-
 const formatarData = (data) =>
-  new Date(data).toLocaleDateString("pt-PT", { year: "numeric", month: "short", day: "numeric" })
+  data ? new Date(data).toLocaleDateString("pt-PT", { year: "numeric", month: "short", day: "numeric" }) : '-'
 
+// mounted
 onMounted(async () => {
   await carregarCiclos()
   await carregarUsuariosEModulos()
   await carregarAvaliacoes()
-  await atualizarAvaliacao();
-  await eliminarAvaliacao();
+  // NOTA: não chamar atualizarAvaliacao() e eliminarAvaliacao() sem argumentos
 })
 </script>
 
 <style scoped>
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css");
-.ciclos-root {
-  padding: 28px;
-  font-family: "Inter", sans-serif;
-  color: #111827;
-  background: #f9fafb;
-  min-height: 100vh;
-}
+.ciclos-root { padding: 28px; font-family: "Inter", sans-serif; color: #111827; background: #f9fafb; min-height: 100vh; }
 
-/* === Cabeçalho e Ciclos seguem o mesmo estilo do original === */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.icon-lg {
-  font-size: 2.4rem;
-  color: #2563eb;
-}
-.page-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-.page-header p {
-  color: #6b7280;
-}
-.ciclos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-}
+/* header, cards, forms ... (mantém teu CSS original) */
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
+.header-left { display:flex; align-items:center; gap:14px; }
+.icon-lg { font-size:2.4rem; color:#2563eb; }
+.page-header h2 { font-size:1.5rem; font-weight:700; margin-bottom:4px; }
+.page-header p { color:#6b7280; }
 
+/* grid e cards */
+.ciclos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
+.card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform .25s, box-shadow .25s; }
+.card:hover { transform:translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.08); }
+.card-header { display:flex; justify-content:space-between; align-items:center; }
+.card-header h3 { font-size:1.1rem; display:flex; align-items:center; gap:8px; }
+.status { padding:4px 10px; border-radius:8px; font-size:12px; text-transform:capitalize; }
+.status.ativo { background:#dcfce7; color:#166534; }
+.status.inativo { background:#fee2e2; color:#991b1b; }
+.descricao { margin:10px 0; color:#6b7280; font-size:14px; }
+.datas { font-size:13px; color:#4b5563; display:flex; align-items:center; gap:6px; }
+.card-actions { margin-top:12px; display:flex; justify-content:space-between; align-items:center; }
 
-/* Cards */
-.card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 18px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.card-header h3 {
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.status {
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  text-transform: capitalize;
-}
-.status.ativo {
-  background: #dcfce7;
-  color: #166534;
-}
-.status.inativo {
-  background: #fee2e2;
-  color: #991b1b;
-}
-.descricao {
-  margin: 10px 0;
-  color: #6b7280;
-  font-size: 14px;
-}
-.datas {
-  font-size: 13px;
-  color: #4b5563;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.card-actions {
-  margin-top: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+/* forms */
+.btn { border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-weight:600; font-size:14px; transition:all .2s; }
+.btn-gradient { background:linear-gradient(90deg,#2563eb,#3b82f6); color:white; }
+.btn-gradient:hover { background:linear-gradient(90deg,#1d4ed8,#2563eb); }
+.btn-ghost { background:#f3f4f6; color:#374151; }
+.btn.small { font-size:13px; padding:6px 10px; }
+.btn.danger { background:#fee2e2; color:#b91c1c; }
 
-/* Botões */
-.btn {
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-.btn-gradient {
-  background: linear-gradient(90deg, #2563eb, #3b82f6);
-  color: white;
-}
-.btn-gradient:hover {
-  background: linear-gradient(90deg, #1d4ed8, #2563eb);
-}
-.btn-ghost {
-  background: #f3f4f6;
-  color: #374151;
-}
-.btn-ghost:hover {
-  background: #e5e7eb;
-}
-.btn.small {
-  font-size: 13px;
-  padding: 6px 10px;
-}
-.btn.danger {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-.btn.danger:hover {
-  background: #fecaca;
-}
+/* avaliação section & tabela */
+.avaliacoes-section { margin-top:50px; background:#fff; padding:24px; border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+.avaliacoes-section h2 { display:flex; align-items:center; gap:10px; color:#1e3a8a; font-weight:700; }
+.avaliacoes-section p { color:#6b7280; margin-bottom:18px; }
+.avaliacao-form { display:flex; flex-direction:column; gap:14px; background:#f9fafb; padding:16px; border-radius:10px; border:1px solid #e5e7eb; }
+.form-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.form-group label { font-weight:600; font-size:13px; color:#374151; }
+.form-group select, .form-group input, textarea { width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px; background:#fff; }
+.styled-table { width:100%; border-collapse:collapse; }
+.styled-table th, .styled-table td { padding:10px 8px; border-bottom:1px solid #e5e7eb; font-size:14px; }
+.styled-table th { background:#f9fafb; color:#374151; text-align:left; }
 
-/* Modal */
-.modal-overlay {
+/* ========== Modal corrigido ========== */
+.ciclo-modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  inset: 0; /* top:0; right:0; bottom:0; left:0; */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,0.45);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 9999;
+  padding: 20px; /* garante espaçamento em telas pequenas */
 }
-.modal.glass {
-  background: rgba(255, 255, 255, 0.95);
+
+.ciclo-modal {
+  background: #fff;
   border-radius: 14px;
   padding: 22px;
-  width: 460px;
-  animation: fadeIn 0.3s ease;
-}
-.modal h3 {
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #1e3a8a;
-}
-.form-group {
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-}
-.form-group label {
-  font-weight: 600;
-  margin-bottom: 4px;
-  font-size: 13px;
-}
-.form-group input,
-textarea {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  font-size: 14px;
-}
-textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-.form-group-inline {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-/* Transição */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* === Seção Avaliações === */
-.avaliacoes-section {
-  margin-top: 50px;
-  background: #fff;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-.avaliacoes-section h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #1e3a8a;
-  font-weight: 700;
-}
-.avaliacoes-section p {
-  color: #6b7280;
-  margin-bottom: 18px;
-}
-
-.avaliacao-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  background: #f9fafb;
-  padding: 16px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-}
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-}
-.form-group label {
-  font-weight: 600;
-  font-size: 13px;
-  color: #374151;
-}
-.form-group select {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
-}
-.avaliacoes-list {
-  margin-top: 30px;
-}
-.styled-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.styled-table th,
-.styled-table td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 14px;
-}
-.styled-table th {
-  background: #f9fafb;
-  color: #374151;
-  text-align: left;
-}
-.status {
-  padding: 3px 8px;
-  border-radius: 6px;
-  text-transform: capitalize;
-  font-size: 12px;
-}
-.status.em_progresso {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-.status.concluida {
-  background: #dcfce7;
-  color: #166534;
+  max-width: 520px; /* tamanho confortável */
+  box-shadow: 0 12px 40px rgba(2,6,23,0.18);
+  transform-origin: center;
+  animation: modalIn .22s ease;
 }
 
-.search-bar {
-  margin-bottom: 15px;
-  display: flex;
-  justify-content: flex-end;
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.search-bar input {
-  width: 280px;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-  transition: 0.3s;
+/* responsividade */
+@media (max-width: 540px) {
+  .ciclo-modal { padding:18px; max-width: 95%; }
 }
 
-.search-bar input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
+/* pequenas melhorias visuais */
+.search-bar { margin-bottom: 15px; display:flex; justify-content:flex-end; }
+.search-bar input { width:280px; padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; outline:none; transition:.2s; }
+.search-bar input:focus { border-color:#2563eb; box-shadow:0 0 0 4px rgba(37,99,235,0.06); }
 
-
-/* Modal (mantido igual ao original) */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-}
-.modal.glass {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 14px;
-  padding: 22px;
-  width: 460px;
-  animation: fadeIn 0.3s ease;
-}
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.25s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
+/* util */
+.form-group-inline { display:flex; gap:10px; justify-content:space-between; }
 </style>

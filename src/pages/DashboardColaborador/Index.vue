@@ -1,152 +1,100 @@
 <template>
   <div class="dashboard">
-    <!-- SIDEBAR -->
-    <aside class="sidebar" :class="{ collapsed: isCollapsed }">
-      <div class="logo">
-        <i class="fas fa-user-circle"></i>
-        <span v-if="!isCollapsed"> Colaborador </span>
-      </div>
-      <nav>
-        <ul>
-          <li><i class="fas fa-home"></i><span v-if="!isCollapsed"> Início</span></li>
-          <li><i class="fas fa-tasks"></i><span v-if="!isCollapsed"> Minhas Avaliações</span></li>
-          <li><i class="fas fa-chart-line"></i><span v-if="!isCollapsed"> Progresso</span></li>
-          <li><i class="fas fa-user-cog"></i><span v-if="!isCollapsed"> Editar Perfil</span></li>
-          <li><i class="fas fa-lock"></i><span v-if="!isCollapsed"> Alterar Senha</span></li>
-        </ul>
-      </nav>
-    </aside>
-
-    <!-- MAIN -->
+    <ColaboradorSidebar />
     <div class="main">
-      <!-- TOPBAR -->
-      <header class="topbar">
-        <button class="toggle-btn" @click="isCollapsed = !isCollapsed">
-          <i class="fas fa-bars"></i>
-        </button>
-        <div class="topbar-right">
-          <i class="fas fa-bell"></i>
-          <i class="fas fa-user"></i>
-          <i class="fas fa-sign-out-alt"></i>
-        </div>
-      </header>
+      <ColaboradorTopbar />
 
-      <!-- CONTENT -->
-      <main class="content">
-        <h2>Bem-vindo(a), Colaborador 👋</h2>
-        <div class="cards">
-          <div class="card">
-            <i class="fas fa-star"></i>
-            <h3>Última Avaliação</h3>
-            <p>85% concluída</p>
-          </div>
-          <div class="card">
-            <i class="fas fa-bullseye"></i>
-            <h3>Metas Ativas</h3>
-            <p>3 objetivos</p>
-          </div>
-          <div class="card">
-            <i class="fas fa-envelope"></i>
-            <h3>Notificações</h3>
-            <p>2 novas mensagens</p>
-          </div>
+      <div class="content">
+        <h2><i class="fas fa-chart-line"></i> Meu Desempenho</h2>
+        <p class="subtitle">Visualize seu progresso e baixe seu relatório individual.</p>
+
+        <div v-if="loading" class="loading">
+          <i class="fas fa-spinner fa-spin"></i> Carregando avaliações...
         </div>
-      </main>
+
+        <div v-else-if="avaliacoes.length === 0" class="no-data">
+          Nenhuma avaliação encontrada.
+        </div>
+
+        <div v-else class="cards">
+          <ColaboradorCard
+            v-for="a in avaliacoes"
+            :key="a.id"
+            :avaliacao="a"
+            @baixarPDF="baixarRelatorio"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from 'vue'
+import { apiUsuario } from '@/http/api'
+import ColaboradorSidebar from '@/components/colaboradores/ColaboradorSidebar.vue'
+import ColaboradorTopbar from '@/components/colaboradores/ColaboradorTopbar.vue'
+import ColaboradorCard from '@/components/colaboradores/ColaboradorCard.vue'
 
-const isCollapsed = ref(false);
+const avaliacoes = ref([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const { data } = await apiUsuario.get('/avaliacoes/colaborador-avaliacao')
+    avaliacoes.value = data.avaliacoes || []
+  } catch (error) {
+    console.error('Erro ao carregar avaliações:', error)
+  } finally {
+    loading.value = false
+  }
+})
+
+const baixarRelatorio = async (id) => {
+  try {
+    const response = await apiUsuario.get(`/avaliacoes/${id}/pdf`, {
+      responseType: 'blob',
+    })
+
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Relatorio_Avaliacao_${id}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+  } catch (error) {
+    console.error('Erro ao baixar PDF:', error)
+    alert('Erro ao gerar PDF. Tente novamente.')
+  }
+}
 </script>
 
 <style scoped>
 .dashboard {
   display: flex;
   min-height: 100vh;
-  background: #f4f6f9;
-  color: #333;
+  background: #f8f9fa;
 }
-
-/* Sidebar */
-.sidebar {
-  width: 240px;
-  background: #0d1b2a;
-  color: white;
-  transition: width 0.3s;
-  padding: 1rem;
-}
-.sidebar.collapsed {
-  width: 80px;
-}
-.sidebar .logo {
-  display: flex;
-  align-items: center;
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-}
-.sidebar nav ul {
-  list-style: none;
-  padding: 0;
-}
-.sidebar nav ul li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0.8rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.sidebar nav ul li:hover {
-  background: #1b263b;
-}
-
-/* Main */
 .main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.topbar {
-  background: white;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #ddd;
-}
-.topbar-right i {
-  margin-left: 1.2rem;
-  cursor: pointer;
+  margin-left: 250px;
 }
 .content {
-  padding: 2rem;
+  padding: 6rem 2rem 2rem;
 }
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
-  margin-top: 2rem;
 }
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
+.subtitle {
+  color: #666;
+  margin-bottom: 2rem;
+}
+.loading, .no-data {
   text-align: center;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
-}
-.card:hover {
-  transform: translateY(-5px);
-}
-.card i {
-  font-size: 2rem;
-  color: #007bff;
-  margin-bottom: 0.5rem;
+  margin-top: 3rem;
+  color: #777;
+  font-size: 1.1rem;
 }
 </style>
-
-
