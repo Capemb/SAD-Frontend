@@ -148,115 +148,62 @@
     </transition>
 </template>
 <script setup>
-
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { apiRh } from '@/http/api' // ajusta o caminho conforme necessário
-
-
+import { apiRh } from '@/http/api' // tua instância axios configurada
 
 const router = useRouter()
-const isCollapsed = ref(false)
-const routeName = ref('dashboard')
-const search = ref('')
-const notificationsCount = ref(3)
-const userMenuOpen = ref(false)
-const user = reactive({
-  name: '',
-  
-})
 
-const menu = [
-  { name: 'dashboard', label: 'Dashboard', route: 'home', icon: 'fa-solid fa-house' },
-  { name: 'colaboradores', label: 'Colaboradores', route: 'colaboradores', icon: 'fa-solid fa-users' },
-  { name: 'perfis', label: 'Perfis e Permissões', route: 'perfis', icon: 'fa-solid fa-id-badge' },
-  { name: 'modulos', label: 'Módulos de Avaliação', route: 'modulos', icon: 'fa-solid fa-layer-group' },
-  { name: 'criterios', label: 'Critérios', route: 'criterios', icon: 'fa-solid fa-list-check' },
-  { name: 'ciclos', label: 'Ciclos de Avaliação', route: 'ciclos', icon: 'fa-solid fa-calendar-days' },
-  { name: 'relatorios', label: 'Relatórios', route: 'relatorios', icon: 'fa-solid fa-chart-line' },
-  { name: 'config', label: 'Configurações', route: 'config', icon: 'fa-solid fa-gear' }
-]
+// === Estado principal ===
+const kpis = ref([
+  { title: 'Avaliações Ativas', value: '—', sub: 'Em andamento', icon: 'fa-solid fa-spinner' },
+  { title: 'Colaboradores', value: '—', sub: 'Total', icon: 'fa-solid fa-users' },
+  { title: 'Completo (%)', value: '—', sub: 'Último ciclo', icon: 'fa-solid fa-circle-check' },
+  { title: 'Relatórios', value: '—', sub: 'Gerados', icon: 'fa-solid fa-file-lines' },
+])
 
-/* KPI placeholders */
-const kpis = [
-  { title: 'Avaliações Ativas', value: '4', sub: 'Em andamento', icon: 'fa-solid fa-spinner' },
-  { title: 'Colaboradores', value: '1.248', sub: 'Total', icon: 'fa-solid fa-users' },
-  { title: 'Completo (%)', value: '72%', sub: 'Último ciclo', icon: 'fa-solid fa-circle-check' },
-  { title: 'Relatórios', value: '23', sub: 'Gerados', icon: 'fa-solid fa-file-lines' },
-]
-
-/* Modules + cycles + reports (fake data for UI) */
+const modules = ref([])
 const modulesLoading = ref(false)
-const modules = ref([
+const cycles = ref([])
+const reports = ref([])
+const chartData = ref([40, 70, 60, 85, 45]) // placeholder
 
-])
-
-const cycles = ref([
-  { id: 1, nome: 'Semestral 2025', inicio: '01/06/2025', fim: '30/06/2025', status: 'in-progress', statusLabel: 'Em andamento', progress: 72 },
-  { id: 2, nome: 'Anual 2024', inicio: '01/01/2024', fim: '31/01/2024', status: 'completed', statusLabel: 'Concluído', progress: 100 },
-])
-
-const reports = ref([
-  { id: 1, title: 'Relatório Semestral RH', date: '01 set 2025' },
-  { id: 2, title: 'Matriz de Competências', date: '20 jul 2025' },
-])
-
-const chartData = ref([40, 70, 60, 85, 45]) // simples placeholder
-
-/* Module modal */
+// === Modal de Módulo ===
 const showModuleModal = ref(false)
 const editingModule = ref(null)
-const moduleForm = reactive({ id: null, nome: '', descricao: '', peso: 0.0 })
 const moduleLoading = ref(false)
+const moduleForm = reactive({
+  id: null,
+  nome: '',
+  descricao: '',
+  peso: 0.0,
+})
 
-/* Actions */
-const toggleSidebar = () => (isCollapsed.value = !isCollapsed.value)
-const navigate = (item) => {
-  routeName.value = item.route
-  // exemplo: podes usar router.push dependendo da tua estrutura real
-  // router.push({ name: item.route })
-}
-const onSearch = () => {
-  // conecta com API de busca se necessário
-  alert(`Pesquisar: ${search.value}`)
-}
-const toggleUserMenu = () => (userMenuOpen.value = !userMenuOpen.value)
-const goToProfile = () => {
-  // router.push({ name: 'perfil' })
-  alert('Ir para meu perfil (implementa navegação)')
-}
-const openChangeProfileModal = () => {
-  alert('Abrir modal de mudar perfil (já tens no fluxo de perfis)')
-}
-const handleLogout = async()=>{
-  // limpar tokens e redirecionar
-  localStorage.removeItem('auth_token_rh')
-  localStorage.removeItem('perfilAtivo')
-
-  try{
-    await api.post('auth/logout', {}, {
+// === Ações Gerais ===
+const handleLogout = async () => {
+  try {
+    await apiRh.post('/logout', {}, {
       headers: { Authorization: `Bearer ${localStorage.getItem('auth_token_rh')}` }
     })
   } catch (error) {
-    console.error('Erro ao fazer logout no servidor.', error)
+    console.warn('Erro ao fazer logout no servidor:', error)
   } finally {
     localStorage.removeItem('auth_token_rh')
     localStorage.removeItem('perfilAtivo')
-    setAuthToken(null)
+    router.push({ name: 'login' })
   }
-  
-  // setAuthToken(null)
-  router.push({ name: 'login' })
 }
 
-/* module modal actions */
+// === Funções de módulo ===
 const openCreateModule = () => {
   editingModule.value = null
   moduleForm.id = null
   moduleForm.nome = ''
   moduleForm.descricao = ''
+  moduleForm.peso = 0.0
   showModuleModal.value = true
 }
+
 const editModule = (m) => {
   editingModule.value = m.id
   moduleForm.id = m.id
@@ -271,108 +218,116 @@ const closeModuleModal = () => (showModuleModal.value = false)
 const saveModule = async () => {
   if (!moduleForm.nome.trim()) return
   moduleLoading.value = true
-   try{
 
-     const token = localStorage.getItem('auth_token_rh') // se usas token separado pra RH
-     const response = await fetch('http://localhost:8000/api/modulos-avaliacao/criar-modulo', {
-       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}`},
-        body: JSON.stringify({
-         nome: moduleForm.nome,
-         descricao: moduleForm.descricao,
-         peso: moduleForm.peso}
-        ),
-      })
-      if(!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`)
-      }
+  try {
+    const token = localStorage.getItem('auth_token_rh')
+    const url = editingModule.value
+      ? `http://localhost:8000/api/modulos-avaliacao/atualizar-modulo/${moduleForm.id}`
+      : 'http://localhost:8000/api/modulos-avaliacao/criar-modulo'
 
-      const data = await response.json()
-      modules.value.unshift(data)
-      showModuleModal.value = false
+    const method = editingModule.value ? 'PUT' : 'POST'
 
-   } catch (error) {
-     console.error('Erro ao salvar módulo:', error)
-     alert('Erro ao salvar módulo. Tente novamente.')
-   } finally {
-     moduleLoading.value = false
-   }
-  
-    
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        nome: moduleForm.nome,
+        descricao: moduleForm.descricao,
+        peso: moduleForm.peso,
+      }),
+    })
+
+    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`)
+
+    await carregarModulos()
+    closeModuleModal()
+  } catch (error) {
+    console.error('Erro ao salvar módulo:', error)
+    alert('Erro ao salvar módulo. Tente novamente.')
+  } finally {
+    moduleLoading.value = false
+  }
 }
 
 const removeModule = async (m) => {
-  if (!confirm(`Remover módulo "${m.nome}"?`)) return;
-
+  if (!confirm(`Remover módulo "${m.nome}"?`)) return
   try {
+    const token = localStorage.getItem('auth_token_rh')
     const response = await fetch(`http://localhost:8000/api/modulos-avaliacao/eliminar-modulo/${m.id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token_rh')}`,
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('Erro backend:', errorData)
-      alert(errorData.message || 'Erro ao remover módulo.')
-      return
-    }
-
-    alert('Módulo removido com sucesso ✅')
-    // Atualiza a lista de módulos
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`)
     await carregarModulos()
-  } catch (err) {
-    console.error('Erro de rede:', err)
-    alert('Falha na comunicação com o servidor.')
+  } catch (error) {
+    console.error('Erro ao remover módulo:', error)
   }
 }
 
-
-const openCreateCycle = () => alert('Abrir modal de criação de ciclo (implementar)')
-const openReports = () => alert('Abrir painel de relatórios')
-const viewCycle = (c) => alert(`Ver ciclo: ${c.nome}`)
-const downloadReport = (r) => alert(`Download: ${r.title}`)
-
-/* fake load to simulate API */
-
-
-
-onMounted(async () => {
-  modulesLoading.value = true
+// === Carregamento de dados ===
+const carregarResumo = async () => {
   try {
-    const token = localStorage.getItem('auth_token_rh') // o mesmo token que usas para criar
-    const response = await fetch('http://localhost:8000/api/modulos-avaliacao/listar-modulo', {
-      headers: {
-          credentials: 'include',
-           headers: { 'Accept': 'application/json' },
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
+    const token = localStorage.getItem('auth_token_rh')
+    const { data } = await apiRh.get('/dashboard/resumo', {
+      headers: { Authorization: `Bearer ${token}` },
     })
 
-    if (!response.ok) {
-      throw new Error(`Erro HTTP: ${response.status}`)
-    }
+    // Previne undefined
+    const k = data.kpis || {}
+    kpis.value = [
+      { title: 'Avaliações Ativas', value: k.avaliacoesAtivas ?? 0, sub: 'Em andamento', icon: 'fa-solid fa-spinner' },
+      { title: 'Colaboradores', value: k.colaboradores ?? 0, sub: 'Total', icon: 'fa-solid fa-users' },
+      { title: 'Completo (%)', value: `${k.percentualConcluido ?? 0}%`, sub: 'Último ciclo', icon: 'fa-solid fa-circle-check' },
+      { title: 'Relatórios', value: k.relatoriosGerados ?? 0, sub: 'Gerados', icon: 'fa-solid fa-file-lines' },
+    ]
 
+    cycles.value = (data.ciclosRecentes || []).map(c => ({
+      id: c.id,
+      nome: c.nome,
+      inicio: new Date(c.inicio).toLocaleDateString(),
+      fim: new Date(c.fim).toLocaleDateString(),
+      status: c.status,
+      statusLabel: c.status === 'concluida' ? 'Concluida' : 'em_progresso',
+      progress: c.progress || 0,
+    }))
+
+    reports.value = (data.relatoriosRecentes || []).map(r => ({
+      id: r.id,
+      title: r.titulo,
+      date: new Date(r.created_at).toLocaleDateString(),
+    }))
+  } catch (error) {
+    console.error('Erro ao carregar resumo do dashboard:', error)
+  }
+}
+
+const carregarModulos = async () => {
+  modulesLoading.value = true
+  try {
+    const token = localStorage.getItem('auth_token_rh')
+    const response = await fetch('http://localhost:8000/api/modulos-avaliacao/listar-modulo', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`)
     const data = await response.json()
-    // Aqui assumes que o controller retorna um array de módulos:
-    // ex: [{ id: 1, nome: '...', descricao: '...' }]
     modules.value = data
-  } catch (err) {
-    console.error('Erro ao buscar módulos', err)
-    alert('Erro ao buscar módulos')
+  } catch (error) {
+    console.error('Erro ao buscar módulos:', error)
   } finally {
     modulesLoading.value = false
   }
+}
+
+// === Hooks ===
+onMounted(async () => {
+  await carregarResumo()
+  await carregarModulos()
 })
-
-
-
 </script>
+
 
 <style scoped>
 :root { --bg: #f5f7fb; --card: #ffffff; --muted: #6b7280; --blue-600: #2563eb; --blue-500: #3b82f6; --danger: #ef4444; font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }

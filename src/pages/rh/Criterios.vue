@@ -10,7 +10,7 @@
             <div class="card-header">
               <h3>Módulos</h3>
               <div>
-                <button class="btn" @click="openCreateModule">Novo Módulo</button>
+                <button class="btn" @click="openCreateModule">Seleciona um dos módulos</button>
               </div>
             </div>
 

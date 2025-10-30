@@ -429,6 +429,173 @@ onMounted(async () => {
   animation: modalIn .22s ease;
 }
 
+/* ===== Overlay ===== */
+.ciclo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeInBg 0.25s ease;
+}
+
+/* ===== Modal Container ===== */
+.ciclo-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 480px;
+  max-width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  animation: popIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ===== Header ===== */
+.ciclo-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  color: #fff;
+  padding: 1rem 1.3rem;
+}
+
+.ciclo-modal-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.close-btn:hover {
+  opacity: 0.8;
+}
+
+/* ===== Body ===== */
+.ciclo-modal-body {
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1e293b;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  outline: none;
+}
+
+/* ===== Inline Fields ===== */
+.form-group-inline {
+  display: flex;
+  gap: 1rem;
+}
+.form-group-inline div {
+  flex: 1;
+}
+
+/* ===== Footer ===== */
+.ciclo-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  padding: 1rem 1.4rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn.primary {
+  background: #2563eb;
+  color: #fff;
+}
+.btn.primary:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.btn.ghost {
+  background: #f3f4f6;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+}
+.btn.ghost:hover {
+  background: #e5e7eb;
+}
+
+/* ===== Animations ===== */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes fadeInBg {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
 @keyframes modalIn {
   from { opacity: 0; transform: translateY(8px) scale(.995); }
   to { opacity: 1; transform: translateY(0) scale(1); }
